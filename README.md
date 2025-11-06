@@ -1,2 +1,12 @@
-# Dynamic-Form-Builder
-**Short Description:** A **Dynamic Form Builder** is a web application that allows an admin to create custom forms with different field types (like text, dropdown, checkbox, etc.) without coding. Users can then fill out these forms, and their responses are stored in a database for further use.
+# Dynamic Form Builder 📝
+
+A full-stack dynamic form builder where admins can create forms with custom fields, and users can submit responses. Built with Node.js, Express, MongoDB, and React (frontend optional but included).  
+
+---
+
+## 🚀 How to Run This Project Locally
+
+### 1. Clone the Repository
+Open your terminal and run:  
+```bash
+git clone https://github.com/niranjan-ithape/Dynamic-Form-Builder.git
