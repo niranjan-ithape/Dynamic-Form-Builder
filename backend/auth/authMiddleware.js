@@ -1,7 +1,7 @@
   const jwt = require('jsonwebtoken');
   const User = require('../model/UserModel');
 
-  const protect = async (req, res, next) => {
+  const authMiddleware = async (req, res, next) => {
     let token;
     if (
       req.headers.authorization &&
@@ -22,4 +22,4 @@
     }
   };
 
-  module.exports = { protect };
+  module.exports = { authMiddleware };
