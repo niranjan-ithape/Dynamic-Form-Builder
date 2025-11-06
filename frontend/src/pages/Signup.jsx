@@ -22,11 +22,11 @@ const Signup = () => {
     dispatch(registerUser(formData));
   };
 
-  // Toast messages for error and success
+ 
   useEffect(() => {
     if (error) toast.error(error);
 
-    // Only show success toast when user object exists and registration just happened
+
     if (user?.name) {
       toast.success(`Account created successfully! Welcome, ${user.name}`);
     }

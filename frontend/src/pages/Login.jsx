@@ -3,9 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../features/auth/authSlice";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { loading, error, user } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
@@ -21,11 +23,14 @@ const Login = () => {
     dispatch(loginUser(formData));
   };
 
-  // Show toast messages on error or success
   useEffect(() => {
     if (error) toast.error(error);
-    if (user) toast.success(`Welcome, ${user.name}!`);
-  }, [error, user]);
+    if (user) {
+      toast.success(`Welcome, ${user.name}!`);
+      
+      navigate(`/adminDashboard`);
+    }
+  }, [error, user, navigate]);
 
   return (
     <motion.div
@@ -77,7 +82,10 @@ const Login = () => {
 
         <p className="text-center text-gray-500 text-sm mt-6">
           Don’t have an account?{" "}
-          <a href="/signup" className="text-blue-600 font-medium hover:underline">
+          <a
+            href="/signup"
+            className="text-blue-600 font-medium hover:underline"
+          >
             Sign up
           </a>
         </p>

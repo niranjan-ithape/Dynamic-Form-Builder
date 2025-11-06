@@ -2,6 +2,9 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import FormPage from "../pages/FormPage";
+import AdminDashboard from "../pages/AdminDashboard";
+
 
 const UserRoutes = () => {
   return (
@@ -18,7 +21,18 @@ const UserRoutes = () => {
       element={<Signup />} />
 
       <Route 
-      id="2"
+      id="3"
+      path="/form/:id" 
+      element={<FormPage />} />
+
+
+      <Route 
+      id="4"
+      path="/adminDashboard" 
+      element={<AdminDashboard/>} />
+
+     
+      <Route 
       path="/*" 
       element={<Signup />} />
 

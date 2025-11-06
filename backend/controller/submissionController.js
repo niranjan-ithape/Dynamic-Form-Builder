@@ -2,7 +2,6 @@ const Form = require('../model/formModel');
 const Field = require('../model/FieldModel');
 const Submission = require('../model/SubmissionModel');
 
-// 📍 GET /api/forms/:id — get public form details
 exports.getFormById = async (req, res) => {
   try {
     const form = await Form.findById(req.params.id).populate('fields');
@@ -13,7 +12,7 @@ exports.getFormById = async (req, res) => {
   }
 };
 
-// 📍 POST /api/forms/:id/submit — submit user responses
+
 exports.submitForm = async (req, res) => {
   try {
     const { id } = req.params;
@@ -22,18 +21,18 @@ exports.submitForm = async (req, res) => {
     const form = await Form.findById(id).populate('fields');
     if (!form) return res.status(404).json({ message: 'Form not found' });
 
-    // 🔍 Validate each field
+   
     const errors = [];
     for (const field of form.fields) {
       const response = responses.find(r => String(r.fieldId) === String(field._id));
 
-      // Required check
+    
       if (field.required && (!response || response.value === '')) {
         errors.push(`${field.label} is required`);
         continue;
       }
 
-      // Type-specific validation
+     
       if (response && field.type === 'text') {
         if (field.minLength && response.value.length < field.minLength) {
           errors.push(`${field.label} must be at least ${field.minLength} characters`);
@@ -43,7 +42,7 @@ exports.submitForm = async (req, res) => {
         }
       }
 
-      // Regex validation
+   
       if (response && field.regex) {
         const regex = new RegExp(field.regex);
         if (!regex.test(response.value)) {
@@ -56,7 +55,7 @@ exports.submitForm = async (req, res) => {
       return res.status(400).json({ success: false, errors });
     }
 
-    // ✅ Save submission
+    
     const submission = new Submission({
       formId: id,
       responses,

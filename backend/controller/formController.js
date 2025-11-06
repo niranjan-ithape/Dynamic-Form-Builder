@@ -1,23 +1,14 @@
-// controllers/formController.js
-const Form = require('../models/formModel');
+const Form = require('../model/formModel');
 const { v4: uuidv4 } = require('uuid');
 
-/**
- * Standard response helper
- */
-const sendSuccess = (res, message, data = null, status = 200) => {
-  return res.status(status).json({ success: true, message, data });
-};
+const sendSuccess = (res, message, data = null, status = 200) =>
+  res.status(status).json({ success: true, message, data });
 
-const sendError = (res, message, status = 400, data = null) => {
-  return res.status(status).json({ success: false, message, data });
-};
+const sendError = (res, message, status = 400, data = null) =>
+  res.status(status).json({ success: false, message, data });
 
-/**
- * Create a new form
- * Body: { title, description }
- */
-async function createForm(req, res) {
+
+exports.createForm = async (req, res) => {
   try {
     const { title, description } = req.body;
     if (!title || title.trim() === '') {
@@ -28,7 +19,7 @@ async function createForm(req, res) {
       title: title.trim(),
       description: description ? description.trim() : '',
       fields: [],
-      version: 1
+      version: 1,
     });
 
     await form.save();
@@ -37,12 +28,10 @@ async function createForm(req, res) {
     console.error('createForm error', err);
     return sendError(res, 'Unable to create form', 500);
   }
-}
+};
 
-/**
- * List all forms (exclude soft deleted)
- */
-async function listForms(req, res) {
+// List all forms
+exports.listForms = async (req, res) => {
   try {
     const forms = await Form.find({ isDeleted: false })
       .select('title description version createdAt updatedAt')
@@ -53,12 +42,10 @@ async function listForms(req, res) {
     console.error('listForms error', err);
     return sendError(res, 'Unable to fetch forms', 500);
   }
-}
+};
 
-/**
- * Get a single form by id (with fields)
- */
-async function getFormById(req, res) {
+// Get a single form by ID
+exports.getFormById = async (req, res) => {
   try {
     const { id } = req.params;
     const form = await Form.findOne({ _id: id, isDeleted: false }).lean();
@@ -68,25 +55,23 @@ async function getFormById(req, res) {
     console.error('getFormById error', err);
     return sendError(res, 'Unable to fetch form', 500);
   }
-}
+};
 
-/**
- * Update form metadata (title/description)
- * Body: { title?, description? }
- */
-async function updateForm(req, res) {
+// Update form metadata
+exports.updateForm = async (req, res) => {
   try {
     const { id } = req.params;
     const update = {};
     const { title, description } = req.body;
+
     if (title !== undefined) {
       if (!title || String(title).trim() === '') {
         return sendError(res, 'Title cannot be empty', 400);
       }
       update.title = String(title).trim();
     }
-    if (description !== undefined) update.description = String(description).trim();
 
+    if (description !== undefined) update.description = String(description).trim();
     update.updatedAt = new Date();
 
     const updated = await Form.findOneAndUpdate(
@@ -100,12 +85,10 @@ async function updateForm(req, res) {
     console.error('updateForm error', err);
     return sendError(res, 'Unable to update form', 500);
   }
-}
+};
 
-/**
- * Soft-delete a form
- */
-async function deleteForm(req, res) {
+// Soft delete a form
+exports.deleteForm = async (req, res) => {
   try {
     const { id } = req.params;
     const updated = await Form.findOneAndUpdate(
@@ -114,23 +97,20 @@ async function deleteForm(req, res) {
       { new: true }
     );
     if (!updated) return sendError(res, 'Form not found', 404);
-    return sendSuccess(res, 'Form deleted', null);
+    return sendSuccess(res, 'Form deleted');
   } catch (err) {
     console.error('deleteForm error', err);
     return sendError(res, 'Unable to delete form', 500);
   }
-}
+};
 
-/**
- * Add a field to a form
- * Body: field object without id (we'll generate id)
- */
-async function addField(req, res) {
+// Add a field
+exports.addField = async (req, res) => {
   try {
-    const { id } = req.params; // form id
+    const { id } = req.params;
     const payload = req.body;
-    // Validate minimal field properties
     const { label, name, type } = payload;
+
     if (!label || !name || !type) {
       return sendError(res, 'Field label, name and type are required', 400);
     }
@@ -138,7 +118,6 @@ async function addField(req, res) {
     const form = await Form.findOne({ _id: id, isDeleted: false });
     if (!form) return sendError(res, 'Form not found', 404);
 
-    // ensure name uniqueness within form
     if (form.fields.some(f => f.name === name)) {
       return sendError(res, 'Field name must be unique within the form', 400);
     }
@@ -151,28 +130,25 @@ async function addField(req, res) {
       required: !!payload.required,
       options: payload.options || undefined,
       validation: payload.validation || undefined,
-      order: typeof payload.order === 'number' ? payload.order : (form.fields.length + 1)
+      order: typeof payload.order === 'number' ? payload.order : form.fields.length + 1,
     };
 
     form.fields.push(field);
-    // keep fields sorted by order
-    form.fields = form.fields.sort((a, b) => (a.order || 0) - (b.order || 0));
-    form.version = (form.version || 1) + 1; // bump version for structural change
+    form.fields.sort((a, b) => (a.order || 0) - (b.order || 0));
+    form.version = (form.version || 1) + 1;
+
     await form.save();
     return sendSuccess(res, 'Field added', field, 201);
   } catch (err) {
     console.error('addField error', err);
     return sendError(res, 'Unable to add field', 500);
   }
-}
+};
 
-/**
- * Update a field inside a form
- * Body: new field properties
- */
-async function updateField(req, res) {
+// Update a field
+exports.updateField = async (req, res) => {
   try {
-    const { id, fieldId } = req.params; // id => form id
+    const { id, fieldId } = req.params;
     const payload = req.body;
     const form = await Form.findOne({ _id: id, isDeleted: false });
     if (!form) return sendError(res, 'Form not found', 404);
@@ -180,34 +156,30 @@ async function updateField(req, res) {
     const idx = form.fields.findIndex(f => f.id === fieldId);
     if (idx === -1) return sendError(res, 'Field not found', 404);
 
-    // If name changes, ensure uniqueness
     if (payload.name && payload.name !== form.fields[idx].name) {
       if (form.fields.some((f, i) => f.name === payload.name && i !== idx)) {
         return sendError(res, 'Field name must be unique within the form', 400);
       }
     }
 
-    // Update allowed keys
     const allowed = ['label', 'name', 'type', 'required', 'options', 'validation', 'order'];
     allowed.forEach(k => {
       if (payload[k] !== undefined) form.fields[idx][k] = payload[k];
     });
 
-    // sort if order changed
-    form.fields = form.fields.sort((a, b) => (a.order || 0) - (b.order || 0));
-    form.version = (form.version || 1) + 1; // bump version on structural change
+    form.fields.sort((a, b) => (a.order || 0) - (b.order || 0));
+    form.version = (form.version || 1) + 1;
+
     await form.save();
     return sendSuccess(res, 'Field updated', form.fields[idx]);
   } catch (err) {
     console.error('updateField error', err);
     return sendError(res, 'Unable to update field', 500);
   }
-}
+};
 
-/**
- * Delete a field inside a form
- */
-async function deleteField(req, res) {
+// Delete a field
+exports.deleteField = async (req, res) => {
   try {
     const { id, fieldId } = req.params;
     const form = await Form.findOne({ _id: id, isDeleted: false });
@@ -219,18 +191,15 @@ async function deleteField(req, res) {
     form.fields = newFields;
     form.version = (form.version || 1) + 1;
     await form.save();
-    return sendSuccess(res, 'Field deleted', null);
+    return sendSuccess(res, 'Field deleted');
   } catch (err) {
     console.error('deleteField error', err);
     return sendError(res, 'Unable to delete field', 500);
   }
-}
+};
 
-/**
- * Reorder fields (accepts array of {id, order})
- * Body: { orders: [{ id: 'fieldId', order: 1 }, ...] }
- */
-async function reorderFields(req, res) {
+// Reorder fields
+exports.reorderFields = async (req, res) => {
   try {
     const { id } = req.params;
     const { orders } = req.body;
@@ -244,10 +213,12 @@ async function reorderFields(req, res) {
       if (o.id && typeof o.order === 'number') map[o.id] = o.order;
     });
 
-    form.fields = form.fields.map(f => {
-      if (map[f.id] !== undefined) f.order = map[f.id];
-      return f;
-    }).sort((a, b) => (a.order || 0) - (b.order || 0));
+    form.fields = form.fields
+      .map(f => {
+        if (map[f.id] !== undefined) f.order = map[f.id];
+        return f;
+      })
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
 
     form.version = (form.version || 1) + 1;
     await form.save();
@@ -256,16 +227,4 @@ async function reorderFields(req, res) {
     console.error('reorderFields error', err);
     return sendError(res, 'Unable to reorder fields', 500);
   }
-}
-
-module.exports = {
-  createForm,
-  listForms,
-  getFormById,
-  updateForm,
-  deleteForm,
-  addField,
-  updateField,
-  deleteField,
-  reorderFields
 };
